@@ -1,0 +1,25 @@
+{
+  "name": "binance-copy-monitor",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node --no-warnings=ExperimentalWarning server/index.js",
+    "dev:client": "vite --host 0.0.0.0",
+    "start": "node --no-warnings=ExperimentalWarning server/index.js",
+    "test": "node --no-warnings=ExperimentalWarning test/run-tests.js",
+    "build": "vite build"
+  },
+  "dependencies": {
+    "@vitejs/plugin-react": "^5.1.1",
+    "vite": "^7.2.7",
+    "typescript": "^5.9.3",
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3",
+    "lucide-react": "^0.561.0",
+    "express": "^5.2.1",
+    "ws": "^8.18.3",
+    "dotenv": "^17.2.3"
+  },
+  "devDependencies": {}
+}
