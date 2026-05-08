@@ -45,8 +45,11 @@ PORT=5174
 SQLITE_PATH=data/monitor.sqlite
 LEADER_POLL_INTERVAL_MS=30000
 BINANCE_LEADER_POSITION_ENDPOINT=https://www.binance.com/bapi/futures/v1/public/future/leaderboard/getOtherPosition
+BINANCE_LANGUAGE=zh-CN
+BINANCE_WEB_PRODUCT_ENDPOINT=https://www.binance.com/bapi/asset/v2/public/asset-service/product/get-products?includeEtf=true
+BINANCE_WEB_FALLBACK_POLL_MS=5000
 ```
 
 ## 注意
 
-Binance 合约行情使用官方 USDⓈ-M Futures 行情接口。带单员榜单数据不是稳定官方交易 API，已封装在 `LeaderSourceAdapter` 边界内，后续可以替换成授权 API、Webhook 或更稳定的数据源。
+Binance 合约行情优先使用官方 USDⓈ-M Futures WebSocket。若 `fstream.binance.com` 因网络或 DNS 问题不可达，系统会使用 Binance 中文网页端 `bapi` 产品接口作为价格兜底，显示实时价格并生成简化曲线点。带单员榜单数据不是稳定官方交易 API，已封装在 `LeaderSourceAdapter` 边界内，后续可以替换成授权 API、Webhook 或更稳定的数据源。
