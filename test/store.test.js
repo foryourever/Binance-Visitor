@@ -68,3 +68,30 @@ test('store keeps recent klines ordered by open time for chart rendering', () =>
   assert.deepEqual(store.listKlines('BTCUSDT', '1m', 10).map((item) => item.close), [101, 102]);
   store.close();
 });
+
+test('store persists leader profile and metrics snapshots', () => {
+  const store = createStore(':memory:');
+  store.upsertLeader('4872767084124315648');
+  store.updateLeaderSnapshot('4872767084124315648', {
+    profile: {
+      displayName: 'ETH 阿辰',
+      source: 'arena',
+      followers: 144,
+      copiers: 144
+    },
+    metrics: {
+      roi90d: 114.6,
+      pnl: 4386.77,
+      winRate: 95.83,
+      maxDrawdown: 5.25
+    }
+  });
+
+  const leader = store.getLeader('4872767084124315648');
+
+  assert.equal(leader.displayName, 'ETH 阿辰');
+  assert.equal(leader.source, 'arena');
+  assert.equal(leader.profile.followers, 144);
+  assert.equal(leader.metrics.winRate, 95.83);
+  store.close();
+});

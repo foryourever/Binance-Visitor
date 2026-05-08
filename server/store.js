@@ -33,16 +33,36 @@ class Store {
 
   listLeaders() {
     return this.db.prepare(`
-      SELECT leader_id AS leaderId, status, last_error AS lastError, created_at AS createdAt, updated_at AS updatedAt
+      SELECT leader_id AS leaderId, display_name AS displayName, source, status, last_error AS lastError,
+        profile_json AS profileJson, metrics_json AS metricsJson, created_at AS createdAt, updated_at AS updatedAt
       FROM monitored_leaders ORDER BY updated_at DESC
-    `).all();
+    `).all().map(mapLeaderRow);
   }
 
   getLeader(leaderId) {
-    return this.db.prepare(`
-      SELECT leader_id AS leaderId, status, last_error AS lastError, created_at AS createdAt, updated_at AS updatedAt
+    const row = this.db.prepare(`
+      SELECT leader_id AS leaderId, display_name AS displayName, source, status, last_error AS lastError,
+        profile_json AS profileJson, metrics_json AS metricsJson, created_at AS createdAt, updated_at AS updatedAt
       FROM monitored_leaders WHERE leader_id = ?
     `).get(leaderId);
+    return row ? mapLeaderRow(row) : null;
+  }
+
+  updateLeaderSnapshot(leaderId, snapshot) {
+    this.db.prepare(`
+      UPDATE monitored_leaders
+      SET display_name = ?, source = ?, profile_json = ?, metrics_json = ?,
+        status = 'active', last_error = NULL, updated_at = ?
+      WHERE leader_id = ?
+    `).run(
+      snapshot.profile?.displayName ?? snapshot.profile?.handle ?? leaderId,
+      snapshot.profile?.source ?? snapshot.source ?? 'unknown',
+      JSON.stringify(snapshot.profile ?? {}),
+      JSON.stringify(snapshot.metrics ?? {}),
+      Date.now(),
+      leaderId
+    );
+    return this.getLeader(leaderId);
   }
 
   removeLeader(leaderId) {
@@ -262,4 +282,34 @@ function migrate(db) {
       created_at INTEGER NOT NULL
     );
   `);
+  addColumnIfMissing(db, 'monitored_leaders', 'display_name', 'TEXT');
+  addColumnIfMissing(db, 'monitored_leaders', 'source', 'TEXT');
+  addColumnIfMissing(db, 'monitored_leaders', 'profile_json', 'TEXT');
+  addColumnIfMissing(db, 'monitored_leaders', 'metrics_json', 'TEXT');
+}
+
+function addColumnIfMissing(db, table, column, type) {
+  const columns = db.prepare(`PRAGMA table_info(${table})`).all().map((item) => item.name);
+  if (!columns.includes(column)) {
+    db.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${type}`);
+  }
+}
+
+function mapLeaderRow(row) {
+  return {
+    ...row,
+    profile: parseJson(row.profileJson, {}),
+    metrics: parseJson(row.metricsJson, {})
+  };
+}
+
+function parseJson(value, fallback) {
+  if (!value) {
+    return fallback;
+  }
+  try {
+    return JSON.parse(value);
+  } catch {
+    return fallback;
+  }
 }

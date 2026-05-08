@@ -77,6 +77,11 @@ function App() {
       if (event.type === 'leader.trade.updated') {
         setTrades((current) => [event.payload, ...current].slice(0, 100));
       }
+      if (event.type === 'leader.profile.updated') {
+        setLeaders((current) => current.map((leader) => (
+          leader.leaderId === event.payload.leaderId ? event.payload : leader
+        )));
+      }
       if (event.type === 'market.ticker.updated') {
         setSymbols((current) => mergeSymbolTick(current, event.payload));
       }
@@ -194,7 +199,9 @@ function App() {
             {leaders.map((leader) => (
               <div className="row-card" key={leader.leaderId}>
                 <div>
-                  <strong>{leader.leaderId}</strong>
+                  <strong>{leader.displayName || leader.leaderId}</strong>
+                  <p>{leader.leaderId}</p>
+                  <LeaderMetrics leader={leader} />
                   <p>{leader.status}{leader.lastError ? ` · ${leader.lastError}` : ''}</p>
                 </div>
                 <button className="icon-button" onClick={() => removeLeader(leader.leaderId)} aria-label="删除带单员">
@@ -354,6 +361,22 @@ function Metric({ label, value, tone = '' }) {
 
 function EmptyState({ text }) {
   return <div className="empty-state">{text}</div>;
+}
+
+function LeaderMetrics({ leader }) {
+  const metrics = leader.metrics || {};
+  const profile = leader.profile || {};
+  if (!leader.displayName && Object.keys(metrics).length === 0) {
+    return null;
+  }
+  return (
+    <div className="leader-metrics">
+      <span>ROI {formatPercent(metrics.roi90d)}</span>
+      <span>胜率 {formatPercent(metrics.winRate)}</span>
+      <span>回撤 {formatPercent(metrics.maxDrawdown)}</span>
+      <span>跟单 {profile.copiers ?? '--'}</span>
+    </div>
+  );
 }
 
 function mergeSymbolTick(symbols, tick) {

@@ -1,3 +1,4 @@
+import './arena-client.test.js';
 import './api.test.js';
 import './copy-settings.test.js';
 import './market-parser.test.js';

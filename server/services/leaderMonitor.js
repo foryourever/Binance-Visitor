@@ -23,7 +23,14 @@ export class LeaderMonitor {
     const leaders = this.store.listLeaders().filter((leader) => leader.status !== 'paused');
     for (const leader of leaders) {
       try {
-        const trades = await this.adapter.fetchTrades(leader.leaderId);
+        const snapshot = this.adapter.fetchSnapshot
+          ? await this.adapter.fetchSnapshot(leader.leaderId)
+          : { trades: await this.adapter.fetchTrades(leader.leaderId) };
+        if (snapshot.profile || snapshot.metrics) {
+          this.store.updateLeaderSnapshot(leader.leaderId, snapshot);
+          this.realtime?.broadcast('leader.profile.updated', this.store.getLeader(leader.leaderId));
+        }
+        const trades = snapshot.trades || [];
         for (const trade of trades) {
           const result = this.store.insertLeaderTrade(trade);
           if (result.inserted) {

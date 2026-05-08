@@ -1,7 +1,26 @@
 export class BinanceLeaderboardAdapter {
-  constructor({ fetchImpl = fetch, endpoint = process.env.BINANCE_LEADER_POSITION_ENDPOINT } = {}) {
+  constructor({ fetchImpl = fetch, endpoint = process.env.BINANCE_LEADER_POSITION_ENDPOINT, fallbackClient = null } = {}) {
     this.fetchImpl = fetchImpl;
     this.endpoint = endpoint || 'https://www.binance.com/bapi/futures/v1/public/future/leaderboard/getOtherPosition';
+    this.fallbackClient = fallbackClient;
+  }
+
+  async fetchSnapshot(leaderId) {
+    try {
+      return { source: 'binance-leaderboard', trades: await this.fetchTrades(leaderId) };
+    } catch (error) {
+      if (!this.fallbackClient) {
+        throw error;
+      }
+      const snapshot = await this.fallbackClient.fetchSnapshot(leaderId);
+      return {
+        ...snapshot,
+        profile: {
+          ...snapshot.profile,
+          lastBinanceError: error.message
+        }
+      };
+    }
   }
 
   async fetchTrades(leaderId) {
@@ -13,7 +32,8 @@ export class BinanceLeaderboardAdapter {
       method: 'POST',
       headers: {
         'content-type': 'application/json',
-        'clienttype': 'web'
+        'clienttype': 'web',
+        'accept-language': 'zh-CN'
       },
       body: JSON.stringify({
         encryptedUid: leaderId,

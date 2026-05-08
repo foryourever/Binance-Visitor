@@ -7,6 +7,7 @@ import { BinanceClient } from './services/binanceClient.js';
 import { MarketMonitor } from './services/marketMonitor.js';
 import { BinanceLeaderboardAdapter } from './services/leaderAdapter.js';
 import { LeaderMonitor } from './services/leaderMonitor.js';
+import { ArenaTraderClient } from './services/arenaClient.js';
 
 const port = Number(process.env.PORT ?? 5174);
 const store = createStore(process.env.SQLITE_PATH ?? 'data/monitor.sqlite');
@@ -27,7 +28,9 @@ const binanceClient = new BinanceClient();
 const marketMonitor = new MarketMonitor({ store, realtime: realtimeProxy });
 const leaderMonitor = new LeaderMonitor({
   store,
-  adapter: new BinanceLeaderboardAdapter(),
+  adapter: new BinanceLeaderboardAdapter({
+    fallbackClient: new ArenaTraderClient()
+  }),
   realtime: realtimeProxy,
   intervalMs: Number(process.env.LEADER_POLL_INTERVAL_MS ?? 30000)
 });
